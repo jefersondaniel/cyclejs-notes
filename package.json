@@ -1,0 +1,31 @@
+{
+  "name": "cyclejs-notes",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "neutrino start",
+    "build": "neutrino build"
+  },
+  "devDependencies": {
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "neutrino": "^7.1.0",
+    "neutrino-middleware-sass": "^0.0.1",
+    "neutrino-preset-web": "^7.1.0"
+  },
+  "dependencies": {
+    "@cycle/collection": "^0.6.0",
+    "@cycle/dom": "^18.3.0",
+    "@cycle/history": "^6.4.0",
+    "@cycle/isolate": "^3.1.0",
+    "@cycle/run": "^3.3.0",
+    "@orbit/coordinator": "^0.15.8",
+    "@orbit/data": "^0.15.8",
+    "@orbit/indexeddb": "^0.15.8",
+    "@orbit/store": "^0.15.8",
+    "cycle-onionify": "^4.0.0",
+    "dot-prop-immutable-chain": "^0.0.3",
+    "orbit-state-tree": "^0.1.5",
+    "xstream": "^11.0.0"
+  }
+}
