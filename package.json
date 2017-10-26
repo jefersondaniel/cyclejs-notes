@@ -5,10 +5,12 @@
   "license": "MIT",
   "scripts": {
     "start": "neutrino start",
-    "build": "neutrino build"
+    "build": "neutrino build",
+    "deploy": "gh-pages -d build"
   },
   "devDependencies": {
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "gh-pages": "^1.0.0",
     "neutrino": "^7.1.0",
     "neutrino-middleware-sass": "^0.0.1",
     "neutrino-preset-web": "^7.1.0"
