@@ -1,10 +1,13 @@
-import {Schema} from '@orbit/data'
+import Orbit, {Schema} from '@orbit/data'
 import Store from '@orbit/store'
-import IndexedDBSource from '@orbit/indexeddb'
+import JSONAPISource from '@orbit/jsonapi'
+import fetch from 'isomorphic-fetch'
+
+Orbit.fetch = fetch
 
 export const schema = new Schema({
   models: {
-    notes: {
+    note: {
       attributes: {
         text: {type: 'string'},
         slug: {type: 'string'}
@@ -15,8 +18,11 @@ export const schema = new Schema({
 
 export const store = new Store({schema})
 
-export const backup = new IndexedDBSource({
+export const backend = new JSONAPISource({
   schema,
-  name: 'backup',
-  namespace: 'notes'
+  name: 'backend',
+  host: 'https://jsonapi-notes.herokuapp.com',
+  defaultFetchHeaders: {
+    'Content-Type': 'application/vnd.api+json'
+  }
 })

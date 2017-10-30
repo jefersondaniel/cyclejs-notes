@@ -23,10 +23,13 @@
     "@cycle/run": "^3.3.0",
     "@orbit/coordinator": "^0.15.8",
     "@orbit/data": "^0.15.8",
-    "@orbit/indexeddb": "^0.15.8",
+    "@orbit/jsonapi": "^0.15.8",
     "@orbit/store": "^0.15.8",
     "cycle-onionify": "^4.0.0",
     "dot-prop-immutable-chain": "^0.0.3",
+    "isomorphic-fetch": "^2.2.1",
+    "jsonapi-server": "^3.2.2",
+    "jsonapi-store-mongodb": "^2.0.0",
     "orbit-state-tree": "^0.1.5",
     "xstream": "^11.0.0"
   }

@@ -1,4 +1,3 @@
-import dropRepeats from 'xstream/extra/dropRepeats'
 import sampleCombine from 'xstream/extra/sampleCombine'
 import xs from 'xstream'
 import { h } from '@cycle/dom'
@@ -20,9 +19,9 @@ function NoteCollectionWrapper (sources) {
       return state.notes.map(noteId => ({
         id: noteId,
         props$: {
-          id: noteId, // needed by clickProxy$
+          id: noteId,
           active: state.notes.indexOf(noteId) === state.selection,
-          resume: recordSelector(state.orbit, 'notes', noteId).text.substr(0, 16) || 'Empty'
+          resume: recordSelector(state.orbit, 'note', noteId).text.substr(0, 16) || 'Empty'
         }
       }))
     })
@@ -61,33 +60,27 @@ function view ({notesVTree$, editorVTree$}) {
   )
 }
 
-function intent ({DOM, history, Orbit, onion}, changeProxy$) {
+function intent ({DOM, history, Orbit, onion}, editorChange$) {
   const notebookPathChanged$ = history
     .map(location => location.pathname.replace(/^\//, '') || null)
   const orbitStateChanged$ = Orbit.state$
-  const notebookLoaded$ = Orbit.select('notebook-load').filter(request => request.completed)
-  const noteCreated$ = Orbit.select('note-create').filter(request => request.completed)
-  const noteRemoved$ = Orbit.select('note-remove').filter(request => request.completed)
+  const notebookLoaded$ = Orbit.select('notebook-load').filter(request => request.completed && !request.error)
+  const noteCreated$ = Orbit.select('note-create').filter(request => request.completed && !request.error)
+  const noteRemoved$ = Orbit.select('note-remove').filter(request => request.completed && !request.error)
   const noteCreateClicked$ = DOM.select('#addNote').events('click').mapTo('')
-  const emptyNotebookDetected$ = onion.state$
-    .filter(state => state.notes.length === 0 && state.slug && state.isLoaded)
-    .map(state => state.selection)
-    .compose(dropRepeats())
+  const emptyNotebookDetected$ = notebookLoaded$
+    .filter(request => !request.result.note || request.result.note.length === 0)
     .mapTo('')
   const noteCreateRequested$ = xs.merge(noteCreateClicked$, emptyNotebookDetected$)
     .compose(sampleCombine(onion.state$))
     .filter(([text, state]) => !state.isCreating && state.slug && state.isLoaded)
     .map(([text, state]) => ({text, slug: state.slug}))
-  const noteChangeRequested$ = changeProxy$
+  const noteChangeRequested$ = editorChange$
     .compose(sampleCombine(onion.state$))
     .map(([text, state]) => {
-      const note = recordSelector(state.orbit, 'notes', state.notes[state.selection])
+      const note = recordSelector(state.orbit, 'note', state.notes[state.selection])
       return Object.assign({}, note, {text: text})
     })
-  const noteSelected$ = onion.state$
-    .filter(state => state.isLoaded)
-    .map(state => state.selection)
-    .compose(dropRepeats())
 
   return {
     notebookPathChanged$,
@@ -96,12 +89,11 @@ function intent ({DOM, history, Orbit, onion}, changeProxy$) {
     noteCreated$,
     noteRemoved$,
     noteCreateRequested$,
-    noteChangeRequested$,
-    noteSelected$
+    noteChangeRequested$
   }
 }
 
-function model (actions, clickProxy$) {
+function model (actions, click$) {
   const initialReducer$ = xs.of(function initialReducer () {
     return {
       orbit: {},
@@ -113,6 +105,15 @@ function model (actions, clickProxy$) {
       isCreating: false
     }
   })
+
+  const updateEditor = state => dotProp(state)
+    .set(
+      'editor',
+      state.selection != null
+        ? recordSelector(state.orbit, 'note', state.notes[state.selection]).text
+        : null
+    )
+    .value()
 
   const orbitReducer$ = actions.orbitStateChanged$.map(orbitState => {
     return function (appState) {
@@ -131,11 +132,14 @@ function model (actions, clickProxy$) {
 
   const notesLoadedReducer$ = actions.notebookLoaded$.map(request => {
     return function (state) {
-      const notes = request.result.notes || []
-      return dotProp(state)
-        .set('isLoaded', true)
-        .set('notes', notes)
-        .value()
+      const notes = request.result.note || []
+      return updateEditor(
+        dotProp(state)
+          .set('isLoaded', true)
+          .set('notes', notes)
+          .set('selection', notes.length ? 0 : null)
+          .value()
+      )
     }
   })
 
@@ -145,41 +149,35 @@ function model (actions, clickProxy$) {
 
   const noteCreatedReducer$ = actions.noteCreated$.map(request => {
     return function (state) {
-      return dotProp(state)
-        .set('isCreating', false)
-        .set('notes', state.notes.concat(request.result.notes))
-        .value()
+      return updateEditor(
+        dotProp(state)
+          .set('isCreating', false)
+          .set('notes', state.notes.concat(request.result.note))
+          .set('selection', state.selection === null ? state.notes.length - 1 : state.selection)
+          .value()
+      )
     }
   })
 
   const noteRemovedReducer$ = actions.noteRemoved$.map(request => {
     return function (state) {
-      return dotProp(state)
-        .set('notes', state.notes.filter(noteId => noteId != request.result.notes[0]))
-        .value()
+      return updateEditor(
+        dotProp(state)
+          .set('notes', state.notes.filter(noteId => noteId !== request.result.note[0]))
+          .set('selection', state.selection >= state.notes.length ? state.notes.length - 1 : state.selection)
+          .value()
+      )
     }
   })
 
-  const selectionReducer$ = actions.noteSelected$.mapTo(
-    function (state) {
-      const selection = state.selection
-      return dotProp(state)
-        .set(
-          'editor',
-          selection != null
-            ? recordSelector(state.orbit, 'notes', state.notes[selection]).text
-            : null
-        )
-        .value()
-    }
-  )
-
-  const noteClickReducer$ = clickProxy$.map(note => {
+  const noteClickReducer$ = click$.map(note => {
     return function (state) {
       const selection = state.notes.indexOf(note.id)
-      return dotProp(state)
-        .set('selection', selection)
-        .value()
+      return updateEditor(
+        dotProp(state)
+          .set('selection', selection)
+          .value()
+      )
     }
   })
 
@@ -191,16 +189,15 @@ function model (actions, clickProxy$) {
     noteCreatedReducer$,
     noteRemovedReducer$,
     slugReducer$,
-    noteClickReducer$,
-    selectionReducer$
+    noteClickReducer$
   )
 }
 
-function request (actions, removeProxy$) {
+function request (actions, removeClick$) {
   const loadCurrentNotebook$ = actions.notebookPathChanged$.filter(slug => !!slug).map(slug => ({
     method: 'findRecords',
     arguments: [
-      'notes',
+      'note',
       {
         filter: [
           {attribute: 'slug', value: slug}
@@ -212,19 +209,19 @@ function request (actions, removeProxy$) {
 
   const createNote$ = actions.noteCreateRequested$.map(note => ({
     method: 'addRecord',
-    arguments: ['notes', note],
+    arguments: ['note', note],
     category: 'note-create'
   }))
 
   const changeNote$ = actions.noteChangeRequested$.map(note => ({
     method: 'replaceRecord',
-    arguments: ['notes', note],
+    arguments: ['note', note],
     category: 'note-change'
   }))
 
-  const removeRecord$ = removeProxy$.map(note => ({
+  const removeRecord$ = removeClick$.map(note => ({
     method: 'removeRecord',
-    arguments: ['notes', note.id],
+    arguments: ['note', note.id],
     category: 'note-remove'
   }))
 
