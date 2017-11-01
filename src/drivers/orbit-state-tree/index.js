@@ -4,7 +4,7 @@ import { adapt } from '@cycle/run/lib/adapt'
 import Coordinator, { SyncStrategy, RequestStrategy } from '@orbit/coordinator'
 import { StateTree, requestSelector } from 'orbit-state-tree'
 
-export function makeOrbitDriver ({store, schema, backend}) {
+export function makeOrbitDriver ({store, backup, backend, schema}) {
   const stateTree = new StateTree({store, schema})
   const requestIdsByCategories = []
   const state$ = xs.createWithMemory()
@@ -22,7 +22,7 @@ export function makeOrbitDriver ({store, schema, backend}) {
       )
     }
   }
-  const coordinator = new Coordinator({sources: [store, backend]})
+  const coordinator = new Coordinator({sources: [store, backup, backend]})
 
   stateTree.onChange(state => {
     state$.shamefullySendNext(state)
@@ -31,7 +31,7 @@ export function makeOrbitDriver ({store, schema, backend}) {
   coordinator.addStrategy(new RequestStrategy({
     source: 'store',
     on: 'beforeQuery',
-    target: 'backend',
+    target: 'backup',
     action: 'pull',
     blocking: true
   }))
@@ -39,8 +39,30 @@ export function makeOrbitDriver ({store, schema, backend}) {
   coordinator.addStrategy(new RequestStrategy({
     source: 'store',
     on: 'beforeUpdate',
+    target: 'backup',
+    action: 'push',
+    blocking: false
+  }))
+
+  coordinator.addStrategy(new RequestStrategy({
+    source: 'store',
+    on: 'beforeQuery',
+    target: 'backend',
+    action: 'pull',
+    blocking: false
+  }))
+
+  coordinator.addStrategy(new RequestStrategy({
+    source: 'store',
+    on: 'beforeUpdate',
     target: 'backend',
     action: 'push',
+    blocking: false
+  }))
+
+  coordinator.addStrategy(new SyncStrategy({
+    source: 'backup',
+    target: 'store',
     blocking: false
   }))
 

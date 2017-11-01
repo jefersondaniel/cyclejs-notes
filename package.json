@@ -23,6 +23,7 @@
     "@cycle/run": "^3.3.0",
     "@orbit/coordinator": "^0.15.8",
     "@orbit/data": "^0.15.8",
+    "@orbit/indexeddb": "^0.15.8",
     "@orbit/jsonapi": "^0.15.8",
     "@orbit/store": "^0.15.8",
     "cycle-onionify": "^4.0.0",

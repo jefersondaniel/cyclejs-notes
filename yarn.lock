@@ -70,6 +70,14 @@
   version "0.15.0"
   resolved "https://registry.yarnpkg.com/@orbit/immutable/-/immutable-0.15.0.tgz#c4009dd41a8fb2b560e9e3e276ee2fc43d60a7e3"
 
+"@orbit/indexeddb@^0.15.8":
+  version "0.15.8"
+  resolved "https://registry.yarnpkg.com/@orbit/indexeddb/-/indexeddb-0.15.8.tgz#52312cfad275c30c3cf6414245455f391bc3cfe3"
+  dependencies:
+    "@orbit/core" "^0.15.7"
+    "@orbit/data" "^0.15.8"
+    "@orbit/utils" "^0.15.7"
+
 "@orbit/jsonapi@^0.15.8":
   version "0.15.8"
   resolved "https://registry.yarnpkg.com/@orbit/jsonapi/-/jsonapi-0.15.8.tgz#42d0967191d9891894de34f0a61c47179436f7b4"
