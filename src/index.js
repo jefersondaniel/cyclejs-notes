@@ -3,12 +3,12 @@ import {makeDOMDriver} from '@cycle/dom'
 import {makeHashHistoryDriver} from '@cycle/history'
 import onionify from 'cycle-onionify'
 import {makeOrbitDriver} from './drivers/orbit-state-tree'
-import {store, backup, backend, schema} from './data'
+import {store, coordinator, schema} from './data'
 import main from './components/Main'
 
 const drivers = {
   DOM: makeDOMDriver('#root'),
-  Orbit: makeOrbitDriver({store, backup, backend, schema}),
+  Orbit: makeOrbitDriver({store, coordinator, schema}),
   history: makeHashHistoryDriver()
 }
 

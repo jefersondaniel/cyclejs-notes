@@ -1,10 +1,9 @@
 import xs from 'xstream'
 import sampleCombine from 'xstream/extra/sampleCombine'
 import { adapt } from '@cycle/run/lib/adapt'
-import Coordinator, { SyncStrategy, RequestStrategy } from '@orbit/coordinator'
 import { StateTree, requestSelector } from 'orbit-state-tree'
 
-export function makeOrbitDriver ({store, backup, backend, schema}) {
+export function makeOrbitDriver ({store, coordinator, schema}) {
   const stateTree = new StateTree({store, schema})
   const requestIdsByCategories = []
   const state$ = xs.createWithMemory()
@@ -22,55 +21,10 @@ export function makeOrbitDriver ({store, backup, backend, schema}) {
       )
     }
   }
-  const coordinator = new Coordinator({sources: [store, backup, backend]})
 
   stateTree.onChange(state => {
     state$.shamefullySendNext(state)
   })
-
-  coordinator.addStrategy(new RequestStrategy({
-    source: 'store',
-    on: 'beforeQuery',
-    target: 'backup',
-    action: 'pull',
-    blocking: true
-  }))
-
-  coordinator.addStrategy(new RequestStrategy({
-    source: 'store',
-    on: 'beforeUpdate',
-    target: 'backup',
-    action: 'push',
-    blocking: false
-  }))
-
-  coordinator.addStrategy(new RequestStrategy({
-    source: 'store',
-    on: 'beforeQuery',
-    target: 'backend',
-    action: 'pull',
-    blocking: false
-  }))
-
-  coordinator.addStrategy(new RequestStrategy({
-    source: 'store',
-    on: 'beforeUpdate',
-    target: 'backend',
-    action: 'push',
-    blocking: false
-  }))
-
-  coordinator.addStrategy(new SyncStrategy({
-    source: 'backup',
-    target: 'store',
-    blocking: false
-  }))
-
-  coordinator.addStrategy(new SyncStrategy({
-    source: 'backend',
-    target: 'store',
-    blocking: false
-  }))
 
   return function driver (sink$) {
     coordinator.activate().then(() => sink$.addListener(listener))

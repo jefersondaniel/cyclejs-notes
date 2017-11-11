@@ -6,7 +6,7 @@
   "scripts": {
     "start": "neutrino start",
     "build": "neutrino build",
-    "deploy": "gh-pages -d build"
+    "deploy": "neutrino build && gh-pages -d build"
   },
   "devDependencies": {
     "babel-plugin-transform-object-rest-spread": "^6.26.0",

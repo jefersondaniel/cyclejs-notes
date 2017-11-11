@@ -28,13 +28,14 @@ function NoteCollectionWrapper (sources) {
   return Collection.gather(NoteItem, sources, notes$)
 }
 
-function view ({notesVTree$, editorVTree$}) {
+function view ({notesVTree$, editorVTree$, state$}) {
   return xs.combine(
     notesVTree$,
-    editorVTree$
+    editorVTree$,
+    state$
   ).map(
     (result) => {
-      const [notesVTree, editorVTree] = result
+      const [notesVTree, editorVTree, state] = result
 
       return h('div', [
         h('main.' + styles.stack, [
@@ -54,7 +55,8 @@ function view ({notesVTree$, editorVTree$}) {
             h('i.' + styles.iconAdd),
             'New note'
           ])
-        ])
+        ]),
+        !state.isLoaded ? h('div.' + styles.loaderShadow, [h('div.' + styles.loader)]) : h('div')
       ])
     }
   )
@@ -98,6 +100,7 @@ function model (actions, click$) {
     return {
       orbit: {},
       notes: [],
+      errorMessage: null,
       editor: null,
       selection: null,
       slug: null,
@@ -243,7 +246,8 @@ export default function Main (sources) {
   const sinks = {
     DOM: view({
       notesVTree$: Collection.pluck(notes$, item => item.DOM),
-      editorVTree$: editor.DOM
+      editorVTree$: editor.DOM,
+      state$: sources.onion.state$
     }),
     Orbit: request$,
     history: history$,
