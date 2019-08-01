@@ -32,9 +32,12 @@ const remote = new JSONAPISource({
   schema,
   name: 'remote',
   host: 'https://jsonapi-notes.herokuapp.com',
-  defaultFetchHeaders: {
-    'Content-Type': 'application/vnd.api+json'
-  }
+  defaultFetchSettings: {
+    headers: {
+      'Content-Type': 'application/vnd.api+json'
+    },
+    timeout: 30000,
+  },
 })
 
 export const coordinator = new Coordinator({sources: [store, backup, remote]})
